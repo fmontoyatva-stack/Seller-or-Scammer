@@ -1,0 +1,1 @@
+This code checks the store URL for reliability, integrity and safety for online buyer. This tool performs analysis and retrieves reports from various review sites, chat discussions, and other sources. This tool creates the verdict or summary according to its collected information.
