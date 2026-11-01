@@ -35,6 +35,7 @@ export default function App() {
   });
   const [showKeyModal, setShowKeyModal] = useState(false);
   const [tempApiKey, setTempApiKey] = useState('');
+  const [showKeyText, setShowKeyText] = useState(false);
   
   const [loading, setLoading] = useState(false);
   const [loadingStep, setLoadingStep] = useState('');
