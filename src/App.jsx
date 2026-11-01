@@ -48,7 +48,7 @@ export default function App() {
     try {
       const prompt = `Perform a comprehensive store audit for e-commerce website: ${url}. Analyze its trustworthiness, legitimacy, contact details, return policies, trust signals, and check for any known scam reports or red flags. Return the analysis clearly formatted.`;
       
-      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${activeKey}`, {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
