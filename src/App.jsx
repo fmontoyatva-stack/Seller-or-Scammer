@@ -12,12 +12,8 @@ export default function App() {
 
   useEffect(() => {
     const savedKey = localStorage.getItem('gemini_api_key');
-    const envKey = import.meta.env.VITE_GEMINI_API_KEY || import.meta.env.GEMINI_API_KEY || '';
-    
     if (savedKey) {
       setApiKey(savedKey);
-    } else if (envKey) {
-      setApiKey(envKey);
     } else {
       setShowApiKeyModal(true);
     }
@@ -46,8 +42,9 @@ export default function App() {
     setResult(null);
 
     try {
-      const prompt = `Perform a comprehensive store audit for e-commerce website: ${url}. Analyze its trustworthiness, legitimacy, contact details, return policies, trust signals, and check for any known scam reports or red flags. Return the analysis clearly formatted.`;
+      const prompt = `Perform a comprehensive store audit for e-commerce website: ${url}. Analyze its trustworthiness, legitimacy, contact details, return policies, trust signals, and check for any known scam reports or red flags. Return a well-structured breakdown.`;
       
+      // Using gemini-1.5-pro which fully supports v1beta search grounding across all standard keys
       const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-pro:generateContent?key=${activeKey}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -75,51 +72,67 @@ export default function App() {
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#f8fafc', color: '#0f172a', fontFamily: 'system-ui, sans-serif', padding: '2rem 1rem' }}>
-      <header style={{ maxWidth: '800px', margin: '0 auto 2rem auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-        <h1 style={{ fontSize: '1.5rem', fontWeight: '800', color: '#0f766e', margin: 0 }}>🛡️ Seller or Scammer?</h1>
+      <header style={{ maxWidth: '800px', margin: '0 auto 2rem auto', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'white', padding: '1rem 1.5rem', borderRadius: '0.75rem', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <span style={{ fontSize: '1.5rem' }}>🛡️</span>
+          <span style={{ fontWeight: '700', fontSize: '1.125rem', color: '#0f172a' }}>Seller or Scammer?</span>
+        </div>
         <button 
           onClick={() => setShowApiKeyModal(true)}
-          style={{ background: '#0f766e', color: 'white', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem' }}
+          style={{ background: '#f1f5f9', color: '#0f766e', border: '1px solid #cbd5e1', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: '600', fontSize: '0.875rem' }}
         >
-          API Key Setup
+          🔑 API Key Setup
         </button>
       </header>
 
-      <main style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '2rem', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}>
-        <form onSubmit={runAudit} style={{ display: 'flex', gap: '0.75rem', marginBottom: '1.5rem' }}>
+      <main style={{ maxWidth: '800px', margin: '0 auto', background: 'white', padding: '2.5rem 2rem', borderRadius: '0.75rem', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', textAlign: 'center' }}>
+        
+        <div style={{ display: 'inline-block', backgroundColor: '#f0fdf4', color: '#15803d', border: '1px solid #bbf7d0', padding: '0.25rem 0.75rem', borderRadius: '9999px', fontSize: '0.75rem', fontWeight: '700', letterSpacing: '0.05em', marginBottom: '1rem' }}>
+          ✨ E-COMMERCE STORE LEGITIMACY VERIFIER
+        </div>
+
+        <h1 style={{ fontSize: '2.5rem', fontWeight: '900', color: '#0f172a', margin: '0 0 1rem 0', letterSpacing: '-0.025em' }}>
+          Seller or Scammer?
+        </h1>
+
+        <p style={{ color: '#475569', fontSize: '1rem', maxWidth: '600px', margin: '0 auto 2rem auto', lineHeight: '1.5' }}>
+          Verify business addresses, SSL security, domain age, refund policies, and real scam complaints before entering your credit card details.
+        </p>
+
+        <form onSubmit={runAudit} style={{ display: 'flex', gap: '0.75rem', maxWidth: '700px', margin: '0 auto 1.5rem auto' }}>
           <input 
             type="text" 
-            placeholder="Enter online store URL (e.g., mystore.com)" 
+            placeholder="https://www.example.com" 
             value={url}
             onChange={(e) => setUrl(e.target.value)}
-            style={{ flex: 1, padding: '0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', fontSize: '1rem' }}
+            style={{ flex: 1, padding: '0.875rem 1rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', fontSize: '1rem', outline: 'none' }}
           />
           <button 
             type="submit" 
             disabled={loading}
-            style={{ background: '#0f766e', color: 'white', border: 'none', padding: '0.75rem 1.5rem', borderRadius: '0.5rem', fontWeight: '600', cursor: 'pointer' }}
+            style={{ background: '#0f766e', color: 'white', border: 'none', padding: '0.875rem 1.75rem', borderRadius: '0.5rem', fontWeight: '600', fontSize: '1rem', cursor: 'pointer' }}
           >
             {loading ? 'Auditing...' : 'Check Store'}
           </button>
         </form>
 
         {error && (
-          <div style={{ background: '#fee2e2', border: '1px solid #f87171', color: '#991b1b', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem' }}>
+          <div style={{ background: '#fee2e2', border: '1px solid #f87171', color: '#991b1b', padding: '1rem', borderRadius: '0.5rem', marginBottom: '1.5rem', textAlign: 'left' }}>
             <strong>Error:</strong> {error}
           </div>
         )}
 
         {result && (
-          <div style={{ background: '#f1f5f9', padding: '1.5rem', borderRadius: '0.5rem', lineHeight: '1.6', whiteSpace: 'pre-wrap' }}>
+          <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', padding: '1.5rem', borderRadius: '0.5rem', lineHeight: '1.6', whiteSpace: 'pre-wrap', textAlign: 'left' }}>
             {result}
           </div>
         )}
       </main>
 
       {showApiKeyModal && (
-        <div style={{ position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem' }}>
-          <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '450px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)' }}>
-            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem' }}>Gemini API Key Setup</h2>
+        <div style={{ position: 'fixed', inset: '0', background: 'rgba(0,0,0,0.6)', display: 'flex', justifyContent: 'center', alignItems: 'center', padding: '1rem', zIndex: 50 }}>
+          <div style={{ background: 'white', padding: '2rem', borderRadius: '0.75rem', width: '100%', maxWidth: '450px', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', textAlign: 'left' }}>
+            <h2 style={{ fontSize: '1.25rem', fontWeight: '700', marginBottom: '0.5rem', color: '#0f172a' }}>Gemini API Key Setup</h2>
             <p style={{ fontSize: '0.875rem', color: '#64748b', marginBottom: '1.25rem' }}>Enter your Gemini API key to enable live web search verification.</p>
             
             <div style={{ position: 'relative', marginBottom: '1.25rem' }}>
@@ -128,12 +141,13 @@ export default function App() {
                 placeholder="Paste API Key (AIzaSy...)" 
                 value={tempApiKey}
                 onChange={(e) => setTempApiKey(e.target.value)}
-                style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', boxSizing: 'border-box' }}
+                style={{ width: '100%', padding: '0.75rem 2.5rem 0.75rem 1rem', border: '1px solid #cbd5e1', borderRadius: '0.5rem', boxSizing: 'border-box', outline: 'none' }}
               />
               <button
                 type="button"
                 onClick={() => setShowKeyText(!showKeyText)}
-                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}
+                style={{ position: 'absolute', right: '10px', top: '50%', transform: 'translateY(-50%)', background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem' }}
+                title="Toggle key visibility"
               >
                 {showKeyText ? '👁️' : '👁️‍🗨️'}
               </button>
@@ -142,7 +156,7 @@ export default function App() {
             <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '0.75rem' }}>
               <button 
                 onClick={() => setShowApiKeyModal(false)}
-                style={{ background: '#e2e8f0', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: '600' }}
+                style={{ background: '#e2e8f0', color: '#334155', border: 'none', padding: '0.5rem 1rem', borderRadius: '0.375rem', cursor: 'pointer', fontWeight: '600' }}
               >
                 Cancel
               </button>
