@@ -383,7 +383,7 @@ Return ONLY a valid JSON object strictly matching this schema:
         try {
           statusMessage.textContent = 'Analyzing store using Google Search grounding...';
           const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.8-flash',
             contents: systemPrompt,
             config: {
               tools: [{ googleSearch: {} }]
@@ -395,7 +395,7 @@ Return ONLY a valid JSON object strictly matching this schema:
           statusMessage.textContent = 'Retrying via standard audit analysis...';
           // Step 2: Retry without search tool if search grounding is blocked/restricted
           const response = await ai.models.generateContent({
-            model: 'gemini-2.5-flash',
+            model: 'gemini-3.8-flash',
             contents: systemPrompt
           });
           jsonText = response.text;
