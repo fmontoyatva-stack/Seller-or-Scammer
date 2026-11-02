@@ -230,7 +230,7 @@
     </div>
   </div>
 
-  <!-- Application Script with Robust Fallback Chain -->
+  <!-- Application Script using gemini-3.8-flash with fallback handling -->
   <script type="module">
     import { GoogleGenAI } from 'https://esm.sh/@google/genai';
 
@@ -370,11 +370,10 @@ Return ONLY a valid JSON object strictly matching this schema:
       let jsonText = '';
       const ai = new GoogleGenAI({ apiKey: apiKey });
 
-      // Multi-step Fallback Strategy for High Demand (503) or Model Errors
+      // Clean fallback configuration exclusively using gemini-3.8-flash
       const attempts = [
-        { model: 'gemini-3.8-flash', useSearch: true },
-        { model: 'gemini-3.8-flash', useSearch: false },
-        { model: 'gemini-2.5-flash', useSearch: false }
+        { useSearch: true },
+        { useSearch: false }
       ];
 
       let success = false;
@@ -382,11 +381,11 @@ Return ONLY a valid JSON object strictly matching this schema:
 
       for (const attempt of attempts) {
         try {
-          statusMessage.textContent = `Connecting (${attempt.model}${attempt.useSearch ? ' + Search' : ''})...`;
+          statusMessage.textContent = attempt.useSearch ? 'Analyzing store with Google Search grounding...' : 'Retrying standard audit analysis...';
           const config = attempt.useSearch ? { tools: [{ googleSearch: {} }] } : {};
           
           const response = await ai.models.generateContent({
-            model: attempt.model,
+            model: 'gemini-3.8-flash',
             contents: systemPrompt,
             config: config
           });
@@ -397,13 +396,13 @@ Return ONLY a valid JSON object strictly matching this schema:
             break;
           }
         } catch (err) {
-          console.warn(`Attempt with ${attempt.model} failed:`, err);
+          console.warn(`Attempt failed:`, err);
           lastError = err;
         }
       }
 
       if (!success) {
-        errorText.textContent = lastError?.message || 'All AI endpoints are currently busy. Please try again in a moment.';
+        errorText.textContent = lastError?.message || 'Server is experiencing high demand. Please try again in a moment.';
         errorBox.classList.remove('hidden');
         submitBtn.disabled = false;
         btnText.textContent = 'Check Store';
