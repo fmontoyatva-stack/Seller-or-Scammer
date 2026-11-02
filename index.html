@@ -230,16 +230,14 @@
     </div>
   </div>
 
-  <!-- Application Script using ES Modules and official @google/genai SDK -->
+  <!-- Application Script with Robust Fallback Chain -->
   <script type="module">
     import { GoogleGenAI } from 'https://esm.sh/@google/genai';
 
-    // Application State
     let apiKey = localStorage.getItem('gemini_api_key') || '';
     let currentAuditData = null;
-    let manualOverrides = {}; // Map of checkpoint index to status ('PASS', 'WARN', 'FAIL')
+    let manualOverrides = {}; 
 
-    // DOM Elements
     const auditForm = document.getElementById('auditForm');
     const storeUrlInput = document.getElementById('storeUrl');
     const submitBtn = document.getElementById('submitBtn');
@@ -250,7 +248,6 @@
     const errorText = document.getElementById('errorText');
     const resultsContainer = document.getElementById('resultsContainer');
     
-    // Key Modal Elements
     const keyModal = document.getElementById('keyModal');
     const openKeyModalBtn = document.getElementById('openKeyModalBtn');
     const cancelKeyModalBtn = document.getElementById('cancelKeyModalBtn');
@@ -259,7 +256,6 @@
     const toggleKeyVisibility = document.getElementById('toggleKeyVisibility');
     const keyBtnLabel = document.getElementById('keyBtnLabel');
 
-    // Update Header Key status
     function updateKeyUI() {
       if (apiKey) {
         keyBtnLabel.textContent = 'API Key Configured';
@@ -269,7 +265,6 @@
     }
     updateKeyUI();
 
-    // Modal Events
     openKeyModalBtn.addEventListener('click', () => {
       modalKeyInput.value = apiKey;
       keyModal.classList.remove('hidden');
@@ -293,7 +288,6 @@
       modalKeyInput.type = modalKeyInput.type === 'password' ? 'text' : 'password';
     });
 
-    // Audit Process
     auditForm.addEventListener('submit', async (e) => {
       e.preventDefault();
       const targetUrl = storeUrlInput.value.trim();
@@ -304,20 +298,16 @@
         return;
       }
 
-      // Set Loading state
       submitBtn.disabled = true;
       btnText.textContent = 'Auditing...';
       btnSpinner.classList.remove('hidden');
       errorBox.classList.add('hidden');
       statusMessage.classList.remove('hidden');
-      statusMessage.textContent = 'Analyzing store domain, search grounding, and security signals...';
+      statusMessage.textContent = 'Analyzing store domain and security signals...';
 
       manualOverrides = {};
 
-      try {
-        const ai = new GoogleGenAI({ apiKey: apiKey });
-
-        const systemPrompt = `You are an expert e-commerce store security auditor investigating online store URL: ${targetUrl}.
+      const systemPrompt = `You are an expert e-commerce store security auditor investigating online store URL: ${targetUrl}.
 Analyze domain history, SSL certificate, physical business address, owner transparency, refund & return policies, realistic pricing, and real scam complaints on Reddit, BBB, or Trustpilot.
 
 Return ONLY a valid JSON object strictly matching this schema:
@@ -377,40 +367,60 @@ Return ONLY a valid JSON object strictly matching this schema:
   ]
 }`;
 
-        let jsonText = '';
+      let jsonText = '';
+      const ai = new GoogleGenAI({ apiKey: apiKey });
 
-        // Step 1: Attempt generation with Google Search grounding
+      // Multi-step Fallback Strategy for High Demand (503) or Model Errors
+      const attempts = [
+        { model: 'gemini-3.8-flash', useSearch: true },
+        { model: 'gemini-3.8-flash', useSearch: false },
+        { model: 'gemini-2.5-flash', useSearch: false }
+      ];
+
+      let success = false;
+      let lastError = null;
+
+      for (const attempt of attempts) {
         try {
-          statusMessage.textContent = 'Analyzing store using Google Search grounding...';
+          statusMessage.textContent = `Connecting (${attempt.model}${attempt.useSearch ? ' + Search' : ''})...`;
+          const config = attempt.useSearch ? { tools: [{ googleSearch: {} }] } : {};
+          
           const response = await ai.models.generateContent({
-            model: 'gemini-3.8-flash',
+            model: attempt.model,
             contents: systemPrompt,
-            config: {
-              tools: [{ googleSearch: {} }]
-            }
+            config: config
           });
-          jsonText = response.text;
-        } catch (searchErr) {
-          console.warn('Search grounding call failed, retrying direct generation:', searchErr);
-          statusMessage.textContent = 'Retrying via standard audit analysis...';
-          // Step 2: Retry without search tool if search grounding is blocked/restricted
-          const response = await ai.models.generateContent({
-            model: 'gemini-3.8-flash',
-            contents: systemPrompt
-          });
-          jsonText = response.text;
-        }
 
-        // Clean & Parse JSON output
+          if (response && response.text) {
+            jsonText = response.text;
+            success = true;
+            break;
+          }
+        } catch (err) {
+          console.warn(`Attempt with ${attempt.model} failed:`, err);
+          lastError = err;
+        }
+      }
+
+      if (!success) {
+        errorText.textContent = lastError?.message || 'All AI endpoints are currently busy. Please try again in a moment.';
+        errorBox.classList.remove('hidden');
+        submitBtn.disabled = false;
+        btnText.textContent = 'Check Store';
+        btnSpinner.classList.add('hidden');
+        statusMessage.classList.add('hidden');
+        return;
+      }
+
+      try {
         const cleanedJson = jsonText.replace(/^```(?:json)?\n?/, '').replace(/\n?```$/, '').trim();
         currentAuditData = JSON.parse(cleanedJson);
 
         renderAuditResults(currentAuditData);
         resultsContainer.classList.remove('hidden');
-
-      } catch (err) {
-        console.error('Audit Error:', err);
-        errorText.textContent = err.message || 'Failed to complete audit. Please verify your API Key.';
+      } catch (parseErr) {
+        console.error('JSON Parse Error:', parseErr, jsonText);
+        errorText.textContent = 'Failed to parse audit results. Please try again.';
         errorBox.classList.remove('hidden');
       } finally {
         submitBtn.disabled = false;
@@ -420,23 +430,17 @@ Return ONLY a valid JSON object strictly matching this schema:
       }
     });
 
-    // Render Functionality
     function renderAuditResults(data) {
       document.getElementById('targetStoreName').textContent = data.storeName || storeUrlInput.value;
       document.getElementById('summaryText').textContent = data.summary || 'Audit completed.';
 
-      // Render Green Lights
       const greenList = document.getElementById('greenLightsList');
       greenList.innerHTML = (data.greenLights || []).map(g => `<li class="flex items-start gap-2"><span>•</span><span>${g}</span></li>`).join('');
 
-      // Render Red Flags
       const redList = document.getElementById('redFlagsList');
       redList.innerHTML = (data.redFlags || []).map(r => `<li class="flex items-start gap-2"><span>•</span><span>${r}</span></li>`).join('');
 
-      // Render Checkpoints
       renderPillars();
-
-      // Recalculate score & gauge
       updateCalculatedScore();
     }
 
@@ -447,7 +451,7 @@ Return ONLY a valid JSON object strictly matching this schema:
 
       let globalCheckpointIndex = 0;
 
-      currentAuditData.pillars.forEach((pillar, pIdx) => {
+      currentAuditData.pillars.forEach((pillar) => {
         const pillarDiv = document.createElement('div');
         pillarDiv.className = 'border border-slate-100 bg-slate-50/50 rounded-xl p-4';
 
@@ -490,7 +494,6 @@ Return ONLY a valid JSON object strictly matching this schema:
         container.appendChild(pillarDiv);
       });
 
-      // Attach status override event handlers
       document.querySelectorAll('.status-toggle-btn').forEach(btn => {
         btn.addEventListener('click', (e) => {
           const idx = e.target.getAttribute('data-idx');
@@ -519,7 +522,6 @@ Return ONLY a valid JSON object strictly matching this schema:
 
       let baseScore = currentAuditData.overallScore ?? 75;
       
-      // Apply manual override deltas
       let idx = 0;
       currentAuditData.pillars?.forEach(pillar => {
         pillar.items?.forEach(item => {
@@ -536,15 +538,12 @@ Return ONLY a valid JSON object strictly matching this schema:
 
       const finalScore = Math.min(100, Math.max(0, baseScore));
 
-      // Update score display
       const scoreValueEl = document.getElementById('trustScoreValue');
       const scoreLabelEl = document.getElementById('trustScoreLabel');
       const gaugeArc = document.getElementById('scoreGaugeArc');
       const verdictBadge = document.getElementById('verdictBadge');
 
       scoreValueEl.textContent = finalScore;
-
-      // Gauge Arc Calculation
       gaugeArc.setAttribute('stroke-dasharray', `${finalScore}, 100`);
 
       if (finalScore >= 80) {
@@ -568,7 +567,6 @@ Return ONLY a valid JSON object strictly matching this schema:
       }
     }
 
-    // Print Action
     document.getElementById('printBtn').addEventListener('click', () => {
       window.print();
     });
