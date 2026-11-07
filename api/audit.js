@@ -4,12 +4,10 @@ export default async function handler(req, res) {
   }
 
   const { targetUrl, userKey } = req.body;
-  
-  // Prefer custom key entered by user; fallback to server environment variable
   const apiKey = (userKey && userKey.trim() !== "") ? userKey.trim() : process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    return res.status(400).json({ error: 'No API key provided. Please enter a valid OpenRouter key.' });
+    return res.status(400).json({ error: 'No API key provided.' });
   }
 
   try {
@@ -23,10 +21,44 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "openai/gpt-4o-mini",
+        response_format: { type: "json_object" },
         messages: [
           { 
             role: "system", 
-            content: "You are an e-commerce security expert. Provide a concise, highly structured trust audit for the requested store URL. You MUST start your response with a clear Verdict Badge (e.g., 🟢 **VERDICT: SAFE TO BUY**, 🟡 **VERDICT: PROCEED WITH CAUTION**, or 🔴 **VERDICT: HIGH RISK / LIKELY SCAM**) and a Trust Score out of 100. Follow with Markdown headings (###), bullet points (-), and highlight key risk factors or green flags in bold (**). Break your response into sections: Trust Assessment, Key Indicators, Recommendations, and Final Summary." 
+            content: `You are an e-commerce security expert. Analyze the requested store URL and return a valid JSON object strictly matching this schema:
+            {
+              "trustScore": number (0-100),
+              "trustRating": "Trustworthy Store" | "Moderate Risk" | "High Risk / Scammer",
+              "executiveSummary": "Detailed paragraph summarizing the security posture, platform, SSL, and reputation.",
+              "categories": [
+                {
+                  "categoryName": "Domain & Infrastructure",
+                  "categoryScore": number (0-100),
+                  "checkpoints": [
+                    { "name": "SSL Encryption & HTTPS", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." },
+                    { "name": "Domain Registration Age", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." },
+                    { "name": "WHOIS Ownership Privacy", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." }
+                  ]
+                },
+                {
+                  "categoryName": "Business Identity & Location",
+                  "categoryScore": number (0-100),
+                  "checkpoints": [
+                    { "name": "Physical Address Verification", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." },
+                    { "name": "Support Phone & Email", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." },
+                    { "name": "Social Media Presence", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." }
+                  ]
+                },
+                {
+                  "categoryName": "Customer Feedback & Complaints",
+                  "categoryScore": number (0-100),
+                  "checkpoints": [
+                    { "name": "Scam Complaint Reports", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." },
+                    { "name": "BBB & Trustpilot Reviews", "status": "PASS" | "WARN" | "FAIL", "detail": "Description..." }
+                  ]
+                }
+              ]
+            }` 
           },
           { 
             role: "user", 
@@ -39,15 +71,15 @@ export default async function handler(req, res) {
     const data = await response.json();
 
     if (!response.ok) {
-      // Pass through exact OpenRouter error message
       const openRouterError = data.error?.message || data.message || JSON.stringify(data);
-      return res.status(response.status).json({ error: `OpenRouter API Error (${response.status}): ${openRouterError}` });
+      return res.status(response.status).json({ error: `OpenRouter Error: ${openRouterError}` });
     }
 
     if (data.choices && data.choices[0]) {
-      return res.status(200).json({ summary: data.choices[0].message.content });
+      const parsedData = JSON.parse(data.choices[0].message.content);
+      return res.status(200).json(parsedData);
     } else {
-      return res.status(400).json({ error: 'Unexpected response structure from OpenRouter.' });
+      return res.status(400).json({ error: 'Invalid response from AI provider.' });
     }
 
   } catch (err) {
