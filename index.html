@@ -26,21 +26,23 @@
     .review-form select, .review-form textarea { width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; }
     .review-form textarea { height: 70px; resize: vertical; }
     .btn-primary { width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
+    .btn-primary:hover { background: #1d4ed8; }
 
     .search-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .input-group { display: flex; gap: 10px; }
     .search-input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
     .api-key-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 100%; }
     .btn-audit { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; }
+    .btn-audit:hover { background: #047857; }
 
     /* Rich Report Layout Styles */
     .report-header-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
     .target-url-text { font-size: 1.4rem; font-weight: 700; color: #111827; word-break: break-all; margin-top: 5px; }
     
     .score-badge-box { display: flex; align-items: center; gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 20px; border-radius: 10px; }
-    .score-circle { width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #047857; background: #ecfdf5; border: 3px solid #10b981; }
+    .score-circle { width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; transition: all 0.3s ease; }
     .score-info .label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; }
-    .score-info .value { font-size: 1rem; font-weight: 700; color: #059669; }
+    .score-info .value { font-size: 1rem; font-weight: 700; }
 
     .category-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px; }
     .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; font-weight: 700; color: #1f2937; }
@@ -112,7 +114,7 @@
         </div>
       </div>
 
-      <!-- DYNAMIC AUDIT RESULTS CONTAINER -->
+      <!-- AUDIT RESULTS CONTAINER -->
       <div id="auditResults">
         <div class="card" style="text-align: center; color: #6b7280; padding: 40px;">
           Enter a store URL above and click "Check Store" to begin analysis.
@@ -220,6 +222,24 @@
             });
           }
 
+          // DYNAMIC SCORE COLORS BASED ON TRUST SCORE
+          let scoreColor = '#059669'; // Emerald Green
+          let scoreBg = '#ecfdf5';
+          let scoreBorder = '#10b981';
+
+          const numericScore = parseInt(data.trustScore, 10) || 0;
+          if (numericScore < 40) {
+            // High Risk / Scammer -> Red
+            scoreColor = '#dc2626';
+            scoreBg = '#fee2e2';
+            scoreBorder = '#ef4444';
+          } else if (numericScore < 70) {
+            // Moderate Risk -> Amber / Yellow
+            scoreColor = '#d97706';
+            scoreBg = '#fef3c7';
+            scoreBorder = '#f59e0b';
+          }
+
           resultsDiv.innerHTML = `
             <div class="report-header-card">
               <div>
@@ -227,10 +247,10 @@
                 <div class="target-url-text">${urlInput}</div>
               </div>
               <div class="score-badge-box">
-                <div class="score-circle">${data.trustScore || 0}</div>
+                <div class="score-circle" style="color: ${scoreColor}; background: ${scoreBg}; border: 3px solid ${scoreBorder};">${numericScore}</div>
                 <div class="score-info">
                   <div class="label">Trust Rating</div>
-                  <div class="value">${data.trustRating || 'Analyzed'}</div>
+                  <div class="value" style="color: ${scoreColor};">${data.trustRating || 'Analyzed'}</div>
                 </div>
               </div>
             </div>
@@ -253,7 +273,9 @@
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => { initUserTracking(); });
+    document.addEventListener('DOMContentLoaded', () => { 
+      initUserTracking(); 
+    });
   </script>
 </body>
 </html>
