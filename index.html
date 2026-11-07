@@ -5,9 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seller or Scammer? | E-Commerce Store & Trust Audit Tool</title>
   
-  <!-- Markdown Parser (Marked.js) -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif; background-color: #f4f6f8; color: #333; padding: 20px; }
@@ -21,7 +18,7 @@
     .app-container { display: grid; grid-template-columns: 280px 1fr 260px; gap: 20px; max-width: 1400px; margin: 0 auto; }
     @media (max-width: 1024px) { .app-container { grid-template-columns: 1fr; } }
 
-    .card { background: #ffffff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); }
+    .card { background: #ffffff; border-radius: 10px; border: 1px solid #e5e7eb; padding: 20px; box-shadow: 0 2px 4px rgba(0,0,0,0.04); margin-bottom: 20px; }
     h3 { font-size: 1.1rem; color: #1f2937; margin-bottom: 15px; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; }
     .divider { border: 0; height: 1px; background: #e5e7eb; margin: 15px 0; }
 
@@ -29,22 +26,35 @@
     .review-form select, .review-form textarea { width: 100%; padding: 8px; margin-bottom: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-family: inherit; }
     .review-form textarea { height: 70px; resize: vertical; }
     .btn-primary { width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
-    .btn-primary:hover { background: #1d4ed8; }
 
     .search-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
     .input-group { display: flex; gap: 10px; }
     .search-input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
     .api-key-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 100%; }
     .btn-audit { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; }
-    .btn-audit:hover { background: #047857; }
-    .results-box { min-height: 200px; background: #fafafa; border: 1px dashed #d1d5db; border-radius: 6px; padding: 15px; }
 
-    .formatted-audit { line-height: 1.6; color: #1f2937; }
-    .formatted-audit h3 { font-size: 1.1rem; font-weight: 700; color: #111827; margin-top: 1.25rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
-    .formatted-audit p { margin-bottom: 0.75rem; }
-    .formatted-audit ul { margin-left: 1.25rem; margin-bottom: 0.75rem; }
-    .formatted-audit li { margin-bottom: 0.25rem; }
-    .formatted-audit strong { color: #0f172a; }
+    /* Rich Report Layout Styles */
+    .report-header-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
+    .target-url-text { font-size: 1.4rem; font-weight: 700; color: #111827; word-break: break-all; margin-top: 5px; }
+    
+    .score-badge-box { display: flex; align-items: center; gap: 15px; background: #f8fafc; border: 1px solid #e2e8f0; padding: 12px 20px; border-radius: 10px; }
+    .score-circle { width: 55px; height: 55px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 1.2rem; color: #047857; background: #ecfdf5; border: 3px solid #10b981; }
+    .score-info .label { font-size: 0.75rem; text-transform: uppercase; color: #64748b; font-weight: 700; }
+    .score-info .value { font-size: 1rem; font-weight: 700; color: #059669; }
+
+    .category-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 15px 20px; margin-bottom: 15px; }
+    .category-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; border-bottom: 2px solid #f3f4f6; padding-bottom: 8px; font-weight: 700; color: #1f2937; }
+    .category-score-badge { font-size: 0.85rem; background: #f1f5f9; padding: 4px 10px; border-radius: 6px; color: #475569; }
+
+    .checkpoint-item { display: flex; justify-content: space-between; align-items: flex-start; padding: 10px 0; border-bottom: 1px solid #f8fafc; gap: 15px; }
+    .checkpoint-item:last-child { border-bottom: none; }
+    .checkpoint-title { font-weight: 600; font-size: 0.95rem; color: #1e293b; margin-bottom: 2px; }
+    .checkpoint-desc { font-size: 0.85rem; color: #64748b; }
+    
+    .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.75rem; font-weight: 700; text-transform: uppercase; white-space: nowrap; }
+    .badge.pass { background: #d1fae5; color: #065f46; }
+    .badge.warn { background: #fef3c7; color: #92400e; }
+    .badge.fail { background: #fee2e2; color: #991b1b; }
 
     .metric-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .metric-label { font-size: 0.9rem; color: #4b5563; }
@@ -59,7 +69,7 @@
       <img src="sellerorscammer.jpg" alt="Seller vs Scammer Comic Strip" class="hero-comic-banner" />
     </div>
     <h1 class="app-title">Seller or Scammer?</h1>
-    <p class="app-tagline">Instantly audit online store legitimacy and domain trust before buying.</p>
+    <p class="app-tagline">Instantly audit online store security, domain history, physical addresses, and real scam complaints before buying.</p>
   </header>
 
   <div class="app-container">
@@ -76,15 +86,11 @@
             <option value="2">⭐⭐ (2/5)</option>
             <option value="1">⭐ (1/5)</option>
           </select>
-          
           <label for="reviewComment">Comment:</label>
           <textarea id="reviewComment" placeholder="Share your experience..." required></textarea>
-          
           <button type="submit" class="btn-primary">Submit Review</button>
         </form>
-
         <hr class="divider" />
-
         <div class="community-reviews">
           <h3>Recent Feedback</h3>
           <div id="reviewsFeed">
@@ -104,9 +110,12 @@
           </div>
           <input type="password" id="customApiKey" class="api-key-input" placeholder="Optional: Enter OpenRouter API Key (sk-or-v1-...)" />
         </div>
+      </div>
 
-        <div id="auditResults" class="results-box">
-          <p style="color: #6b7280; text-align: center; margin-top: 80px;">Enter a store URL above and click "Check Store" to begin analysis.</p>
+      <!-- DYNAMIC AUDIT RESULTS CONTAINER -->
+      <div id="auditResults">
+        <div class="card" style="text-align: center; color: #6b7280; padding: 40px;">
+          Enter a store URL above and click "Check Store" to begin analysis.
         </div>
       </div>
     </main>
@@ -136,26 +145,18 @@
     function initUserTracking() {
       try {
         if (!localStorage.getItem('sos_visitor_id')) {
-          const uniqueId = 'vis_' + Math.random().toString(36).substr(2, 9) + Date.now();
-          localStorage.setItem('sos_visitor_id', uniqueId);
+          localStorage.setItem('sos_visitor_id', 'vis_' + Math.random().toString(36).substr(2, 9) + Date.now());
         }
-        const userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10);
-        const el = document.getElementById('userTotalSearches');
-        if (el) el.innerText = userSearches.toLocaleString();
-      } catch (e) {
-        console.error("Tracking init error:", e);
-      }
+        document.getElementById('userTotalSearches').innerText = parseInt(localStorage.getItem('sos_user_searches') || '0', 10).toLocaleString();
+      } catch (e) {}
     }
 
     function incrementSearchCounters() {
       try {
         let userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10) + 1;
         localStorage.setItem('sos_user_searches', userSearches);
-        const el = document.getElementById('userTotalSearches');
-        if (el) el.innerText = userSearches.toLocaleString();
-      } catch (e) {
-        console.error("Counter error:", e);
-      }
+        document.getElementById('userTotalSearches').innerText = userSearches.toLocaleString();
+      } catch (e) {}
     }
 
     async function executeAudit() {
@@ -168,7 +169,7 @@
       }
 
       const resultsDiv = document.getElementById('auditResults');
-      resultsDiv.innerHTML = '<p style="text-align: center; color: #2563eb; padding: 40px 0;">Running 15 trust point analysis... Please wait.</p>';
+      resultsDiv.innerHTML = '<div class="card" style="text-align: center; color: #2563eb; padding: 40px;">Running 15 trust checkpoint analysis... Please wait.</div>';
 
       incrementSearchCounters();
 
@@ -176,38 +177,83 @@
         const response = await fetch('/api/audit', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ 
-            targetUrl: urlInput,
-            userKey: customKey || null 
-          })
+          body: JSON.stringify({ targetUrl: urlInput, userKey: customKey || null })
         });
 
         if (response.ok) {
           const data = await response.json();
-          const rawMarkdown = data.summary || 'Store analysis completed successfully.';
-          const cleanHtml = (typeof marked !== 'undefined') ? marked.parse(rawMarkdown) : rawMarkdown;
+          
+          // Build category cards HTML
+          let categoriesHtml = '';
+          if (data.categories && Array.isArray(data.categories)) {
+            data.categories.forEach(cat => {
+              let checkpointsHtml = '';
+              if (cat.checkpoints) {
+                cat.checkpoints.forEach(chk => {
+                  let badgeClass = 'warn';
+                  if (chk.status === 'PASS') badgeClass = 'pass';
+                  if (chk.status === 'FAIL') badgeClass = 'fail';
+
+                  checkpointsHtml += `
+                    <div class="checkpoint-item">
+                      <div>
+                        <div class="checkpoint-title">${chk.name}</div>
+                        <div class="checkpoint-desc">${chk.detail}</div>
+                      </div>
+                      <span class="badge ${badgeClass}">${chk.status}</span>
+                    </div>
+                  `;
+                });
+              }
+
+              categoriesHtml += `
+                <div class="category-card">
+                  <div class="category-header">
+                    <span>${cat.categoryName}</span>
+                    <span class="category-score-badge">Category Score: ${cat.categoryScore}/100</span>
+                  </div>
+                  <div class="checkpoint-list">
+                    ${checkpointsHtml}
+                  </div>
+                </div>
+              `;
+            });
+          }
 
           resultsDiv.innerHTML = `
-            <div class="formatted-audit">
-              <h3 style="color: #059669; margin-bottom: 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px;">
-                Audit Complete for ${urlInput}
-              </h3>
-              ${cleanHtml}
+            <div class="report-header-card">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Audit Target</span>
+                <div class="target-url-text">${urlInput}</div>
+              </div>
+              <div class="score-badge-box">
+                <div class="score-circle">${data.trustScore || 0}</div>
+                <div class="score-info">
+                  <div class="label">Trust Rating</div>
+                  <div class="value">${data.trustRating || 'Analyzed'}</div>
+                </div>
+              </div>
             </div>
+
+            <div class="card">
+              <h3>Executive Summary</h3>
+              <p style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${data.executiveSummary || 'No summary available.'}</p>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; font-size: 1.2rem;">15 Trust Checkpoints & Overrides</h3>
+            ${categoriesHtml}
           `;
+
         } else {
           const errData = await response.json().catch(() => ({}));
-          resultsDiv.innerHTML = `<p style="color: #dc2626; padding: 20px; text-align: center;">Error: ${errData.error || 'Server limit reached. Enter a custom OpenRouter key above.'}</p>`;
+          resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Error: ${errData.error || 'Failed to complete audit.'}</div>`;
         }
       } catch (err) {
-        console.error('Audit execution error:', err);
-        resultsDiv.innerHTML = `<p style="color: #dc2626; padding: 20px; text-align: center;">Unable to connect to audit server.</p>`;
+        resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Unable to connect to audit server.</div>`;
       }
     }
 
-    document.addEventListener('DOMContentLoaded', () => {
-      initUserTracking();
-    });
+    document.addEventListener('DOMContentLoaded', () => { initUserTracking(); });
   </script>
 </body>
 </html>
