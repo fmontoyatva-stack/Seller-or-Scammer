@@ -28,12 +28,16 @@
     .btn-primary { width: 100%; background: #2563eb; color: white; border: none; padding: 10px; border-radius: 6px; font-weight: 600; cursor: pointer; }
     .btn-primary:hover { background: #1d4ed8; }
 
-    .search-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .search-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 15px; }
     .input-group { display: flex; gap: 10px; }
     .search-input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
-    .api-key-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 100%; }
+    .api-key-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 100%; margin-top: 8px; }
     .btn-audit { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; }
     .btn-audit:hover { background: #047857; }
+
+    /* Disclaimer Box Style */
+    .disclaimer-box { background: #fdfdfd; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 15px; font-size: 0.8rem; color: #6b7280; line-height: 1.5; }
+    .disclaimer-box strong { color: #374151; }
 
     /* Rich Report Layout Styles */
     .report-header-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
@@ -112,6 +116,11 @@
           </div>
           <input type="password" id="customApiKey" class="api-key-input" placeholder="Optional: Enter OpenRouter API Key (sk-or-v1-...)" />
         </div>
+
+        <!-- RESTORED DISCLAIMER BOX -->
+        <div class="disclaimer-box">
+          <strong>DISCLAIMER:</strong> The author, developer, and this application shall not be held liable or responsible for any financial, reputational, or other untoward losses or damages arising from the use of this tool or reliance upon its automated audit results.
+        </div>
       </div>
 
       <!-- AUDIT RESULTS CONTAINER -->
@@ -161,121 +170,4 @@
       } catch (e) {}
     }
 
-    async function executeAudit() {
-      const urlInput = document.getElementById('storeUrl').value.trim();
-      const customKey = document.getElementById('customApiKey').value.trim();
-
-      if (!urlInput) {
-        alert('Please enter a valid store URL.');
-        return;
-      }
-
-      const resultsDiv = document.getElementById('auditResults');
-      resultsDiv.innerHTML = '<div class="card" style="text-align: center; color: #2563eb; padding: 40px;">Running 15 trust checkpoint analysis... Please wait.</div>';
-
-      incrementSearchCounters();
-
-      try {
-        const response = await fetch('/api/audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUrl: urlInput, userKey: customKey || null })
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-          
-          // Build category cards HTML
-          let categoriesHtml = '';
-          if (data.categories && Array.isArray(data.categories)) {
-            data.categories.forEach(cat => {
-              let checkpointsHtml = '';
-              if (cat.checkpoints) {
-                cat.checkpoints.forEach(chk => {
-                  let badgeClass = 'warn';
-                  if (chk.status === 'PASS') badgeClass = 'pass';
-                  if (chk.status === 'FAIL') badgeClass = 'fail';
-
-                  checkpointsHtml += `
-                    <div class="checkpoint-item">
-                      <div>
-                        <div class="checkpoint-title">${chk.name}</div>
-                        <div class="checkpoint-desc">${chk.detail}</div>
-                      </div>
-                      <span class="badge ${badgeClass}">${chk.status}</span>
-                    </div>
-                  `;
-                });
-              }
-
-              categoriesHtml += `
-                <div class="category-card">
-                  <div class="category-header">
-                    <span>${cat.categoryName}</span>
-                    <span class="category-score-badge">Category Score: ${cat.categoryScore}/100</span>
-                  </div>
-                  <div class="checkpoint-list">
-                    ${checkpointsHtml}
-                  </div>
-                </div>
-              `;
-            });
-          }
-
-          // DYNAMIC SCORE COLORS BASED ON TRUST SCORE
-          let scoreColor = '#059669'; // Emerald Green
-          let scoreBg = '#ecfdf5';
-          let scoreBorder = '#10b981';
-
-          const numericScore = parseInt(data.trustScore, 10) || 0;
-          if (numericScore < 40) {
-            // High Risk / Scammer -> Red
-            scoreColor = '#dc2626';
-            scoreBg = '#fee2e2';
-            scoreBorder = '#ef4444';
-          } else if (numericScore < 70) {
-            // Moderate Risk -> Amber / Yellow
-            scoreColor = '#d97706';
-            scoreBg = '#fef3c7';
-            scoreBorder = '#f59e0b';
-          }
-
-          resultsDiv.innerHTML = `
-            <div class="report-header-card">
-              <div>
-                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Audit Target</span>
-                <div class="target-url-text">${urlInput}</div>
-              </div>
-              <div class="score-badge-box">
-                <div class="score-circle" style="color: ${scoreColor}; background: ${scoreBg}; border: 3px solid ${scoreBorder};">${numericScore}</div>
-                <div class="score-info">
-                  <div class="label">Trust Rating</div>
-                  <div class="value" style="color: ${scoreColor};">${data.trustRating || 'Analyzed'}</div>
-                </div>
-              </div>
-            </div>
-
-            <div class="card">
-              <h3>Executive Summary</h3>
-              <p style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${data.executiveSummary || 'No summary available.'}</p>
-            </div>
-
-            <h3 style="margin: 20px 0 10px 0; font-size: 1.2rem;">15 Trust Checkpoints & Overrides</h3>
-            ${categoriesHtml}
-          `;
-
-        } else {
-          const errData = await response.json().catch(() => ({}));
-          resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Error: ${errData.error || 'Failed to complete audit.'}</div>`;
-        }
-      } catch (err) {
-        resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Unable to connect to audit server.</div>`;
-      }
-    }
-
-    document.addEventListener('DOMContentLoaded', () => { 
-      initUserTracking(); 
-    });
-  </script>
-</body>
-</html>
+    async function execute
