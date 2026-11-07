@@ -7,7 +7,7 @@ export default async function handler(req, res) {
   const apiKey = (userKey && userKey.trim() !== "") ? userKey.trim() : process.env.OPENROUTER_API_KEY;
 
   if (!apiKey) {
-    return res.status(400).json({ error: 'No API key provided.' });
+    return res.status(400).json({ error: 'No API key provided. Please enter a valid OpenRouter key.' });
   }
 
   try {
@@ -72,7 +72,7 @@ export default async function handler(req, res) {
 
     if (!response.ok) {
       const openRouterError = data.error?.message || data.message || JSON.stringify(data);
-      return res.status(response.status).json({ error: `OpenRouter Error: ${openRouterError}` });
+      return res.status(response.status).json({ error: `OpenRouter Error (${response.status}): ${openRouterError}` });
     }
 
     if (data.choices && data.choices[0]) {
