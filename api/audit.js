@@ -1,4 +1,5 @@
 export default async function handler(req, res) {
+  // Only allow POST requests
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -20,10 +21,16 @@ export default async function handler(req, res) {
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
-        model: "openai/gpt-4o-mini", // or your preferred model
+        model: "openai/gpt-4o-mini",
         messages: [
-          { role: "system", content: "You are an e-commerce security and trust expert. Audit the given URL for potential scam indicators, WHOIS trustworthiness, SSL, and pricing anomalies." },
-          { role: "user", content: `Audit this online store for legitimacy: ${targetUrl}` }
+          { 
+            role: "system", 
+            content: "You are an e-commerce security expert. Provide a concise, highly structured trust audit for the requested store URL. Use clear Markdown headings (###), bullet points (-), and highlight key risk factors or green flags in bold (**). Break your response into logical sections such as Trust Assessment, Key Indicators, and Recommendation." 
+          },
+          { 
+            role: "user", 
+            content: `Audit this online store for legitimacy: ${targetUrl}` 
+          }
         ]
       })
     });
