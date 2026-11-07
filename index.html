@@ -4,14 +4,15 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Seller or Scammer? | E-Commerce Store & Trust Audit Tool</title>
-  <!-- Markdown Parser CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   
   <!-- SEO & Open Graph Meta Tags -->
   <meta name="description" content="Instantly audit online store legitimacy, WHOIS domain age, SSL security, and scam complaints before buying." />
   <meta property="og:title" content="Seller or Scammer? | Free E-Commerce Store Audit" />
   <meta property="og:description" content="Check any e-commerce store before buying. Detect scammers instantly." />
   <meta property="og:type" content="website" />
+
+  <!-- Markdown Parser (Marked.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
 
   <style>
     /* --- CSS STYLES & LAYOUT --- */
@@ -24,38 +25,6 @@
     .hero-comic-banner { width: 100%; max-width: 720px; height: auto; border-radius: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
     .app-title { font-size: 2.2rem; font-weight: 800; color: #111827; margin-bottom: 0.25rem; }
     .app-tagline { color: #4b5563; font-size: 1rem; }
-    /* Formatted Markdown Output */
-.formatted-audit {
-  line-height: 1.6;
-  color: #1f2937;
-}
-
-.formatted-audit h3 {
-  font-size: 1.1rem;
-  font-weight: 700;
-  color: #111827;
-  margin-top: 1.25rem;
-  margin-bottom: 0.5rem;
-  border-bottom: 1px solid #e5e7eb;
-  padding-bottom: 4px;
-}
-
-.formatted-audit p {
-  margin-bottom: 0.75rem;
-}
-
-.formatted-audit ul {
-  margin-left: 1.25rem;
-  margin-bottom: 0.75rem;
-}
-
-.formatted-audit li {
-  margin-bottom: 0.25rem;
-}
-
-.formatted-audit strong {
-  color: #0f172a;
-}
 
     /* 3-Column Grid Container */
     .app-container { display: grid; grid-template-columns: 280px 1fr 260px; gap: 20px; max-width: 1400px; margin: 0 auto; }
@@ -76,216 +45,23 @@
     .btn-primary:hover { background: #1d4ed8; }
 
     /* Center Panel: Audit Engine */
-    .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+    .search-box { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .input-group { display: flex; gap: 10px; }
     .search-input { flex: 1; padding: 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 1rem; }
+    .api-key-input { padding: 10px; border: 1px solid #d1d5db; border-radius: 6px; font-size: 0.85rem; width: 100%; }
     .btn-audit { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; }
     .btn-audit:hover { background: #047857; }
     .results-box { min-height: 200px; background: #fafafa; border: 1px dashed #d1d5db; border-radius: 6px; padding: 15px; }
 
+    /* Formatted Markdown Output */
+    .formatted-audit { line-height: 1.6; color: #1f2937; }
+    .formatted-audit h3 { font-size: 1.1rem; font-weight: 700; color: #111827; margin-top: 1.25rem; margin-bottom: 0.5rem; border-bottom: 1px solid #e5e7eb; padding-bottom: 4px; }
+    .formatted-audit p { margin-bottom: 0.75rem; }
+    .formatted-audit ul { margin-left: 1.25rem; margin-bottom: 0.75rem; }
+    .formatted-audit li { margin-bottom: 0.25rem; }
+    .formatted-audit strong { color: #0f172a; }
+
     /* Right Panel: Metrics Counters */
     .metric-item { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
     .metric-label { font-size: 0.9rem; color: #4b5563; }
-    .metric-value { font-weight: 700; font-size: 1.1rem; color: #111827; }
-    .metric-item.highlight .metric-value { color: #2563eb; font-size: 1.3rem; }
-  </style>
-</head>
-<body>
-
-  <!-- HERO / BANNER SECTION -->
-  <header class="app-header">
-    <div class="banner-container">
-      <img src="sellerorscammer.jpg" alt="Seller vs Scammer Comic Strip" class="hero-comic-banner" />
-    </div>
-    <h1 class="app-title">Seller or Scammer?</h1>
-    <p class="app-tagline">Instantly audit online store legitimacy and domain trust before buying.</p>
-  </header>
-
-  <!-- MAIN 3-PANEL CONTAINER -->
-  <div class="app-container">
-    
-    <!-- LEFT PANEL: Relocated Review Section -->
-    <aside class="left-panel">
-      <div class="card">
-        <h3>Leave a Review</h3>
-        <form id="reviewForm" class="review-form">
-          <label for="userRating">Rating:</label>
-          <select id="userRating" required>
-            <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
-            <option value="4">⭐⭐⭐⭐ (4/5)</option>
-            <option value="3">⭐⭐⭐ (3/5)</option>
-            <option value="2">⭐⭐ (2/5)</option>
-            <option value="1">⭐ (1/5)</option>
-          </select>
-          
-          <label for="reviewComment">Comment:</label>
-          <textarea id="reviewComment" placeholder="Share your experience..." required></textarea>
-          
-          <button type="submit" class="btn-primary">Submit Review</button>
-        </form>
-
-        <hr class="divider" />
-
-        <div class="community-reviews">
-          <h3>Recent Feedback</h3>
-          <div id="reviewsFeed">
-            <p style="font-size: 0.85rem; color: #6b7280;">No reviews submitted yet.</p>
-          </div>
-        </div>
-      </div>
-    </aside>
-
-    <!-- CENTER PANEL: Core Audit Engine -->
-    <main class="center-panel">
-      <div class="card">
-        <h3>Run Store Audit</h3>
-        <div class="search-box">
-          <input type="url" id="storeUrl" class="search-input" placeholder="https://example-store.com" required />
-          <button id="checkStoreBtn" class="btn-audit" onclick="executeAudit()">Check Store</button>
-        </div>
-
-        <div id="auditResults" class="results-box">
-          <p style="color: #6b7280; text-align: center; margin-top: 80px;">Enter a store URL above and click "Check Store" to begin analysis.</p>
-        </div>
-      </div>
-    </main>
-
-    <!-- RIGHT PANEL: Live App & User Counters -->
-    <aside class="right-panel">
-      <div class="card">
-        <h3>Site Analytics</h3>
-        
-        <div class="metric-item">
-          <span class="metric-label">Unique Visitors</span>
-          <span class="metric-value" id="uniqueVisitorsCount">--</span>
-        </div>
-
-        <div class="metric-item">
-          <span class="metric-label">Total Site Searches</span>
-          <span class="metric-value" id="totalSiteSearches">--</span>
-        </div>
-
-        <hr class="divider" />
-
-        <div class="metric-item highlight">
-          <span class="metric-label">Your Searches</span>
-          <span class="metric-value" id="userTotalSearches">0</span>
-        </div>
-      </div>
-    </aside>
-
-  </div>
-
-  <!-- JAVASCRIPT LOGIC -->
-  <script>
-    // --- LOCAL USER & ANALYTICS TRACKING ---
-    function initUserTracking() {
-      // 1. Track Unique Visitors locally
-      if (!localStorage.getItem('sos_visitor_id')) {
-        const uniqueId = 'vis_' + Math.random().toString(36).substr(2, 9) + Date.now();
-        localStorage.setItem('sos_visitor_id', uniqueId);
-        trackUniqueVisitServer(uniqueId);
-      }
-
-      // 2. Load User's Personal Total Searches
-      const userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10);
-      document.getElementById('userTotalSearches').innerText = userSearches.toLocaleString();
-    }
-
-    // Call on search execution
-    function incrementSearchCounters() {
-      // Local User Search Counter
-      let userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10) + 1;
-      localStorage.setItem('sos_user_searches', userSearches);
-      document.getElementById('userTotalSearches').innerText = userSearches.toLocaleString();
-
-      // Send update to Server API
-      trackGlobalSearchServer();
-    }
-
-    // --- AUDIT EXECUTION ENGINE ---
-    async function executeAudit() {
-      const urlInput = document.getElementById('storeUrl').value;
-      if (!urlInput) {
-        alert('Please enter a valid store URL.');
-        return;
-      }
-
-      const resultsDiv = document.getElementById('auditResults');
-      resultsDiv.innerHTML = '<p style="text-align: center; color: #2563eb;">Running 15 trust point analysis... Please wait.</p>';
-
-      // Update counters
-      incrementSearchCounters();
-
-      // Trigger Audit Call to Vercel Serverless Function
-      try {
-        const response = await fetch('/api/audit', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ targetUrl: urlInput })
-        });
-        
-        if (response.ok) {
-          const data = await response.json();
-          const rawMarkdown = data.summary || 'Store analysis completed successfully.';
-          
-          // Convert Markdown into clean formatted HTML
-          const cleanHtml = marked.parse(rawMarkdown);
-
-          resultsDiv.innerHTML = `
-            <div class="formatted-audit">
-              <h3 style="color: #059669; margin-bottom: 12px; border-bottom: 2px solid #e5e7eb; padding-bottom: 6px;">
-                Audit Complete for ${urlInput}
-              </h3>
-              ${cleanHtml}
-            </div>
-          `;
-        } else {
-          resultsDiv.innerHTML = `<p style="color: #dc2626;">Daily limit reached. Enter your own OpenRouter API key above to continue free searches.</p>`;
-        }
-
-    // --- METRICS API CALLS ---
-    async function fetchGlobalMetrics() {
-      try {
-        const response = await fetch('/api/metrics');
-        if (response.ok) {
-          const data = await response.json();
-          document.getElementById('uniqueVisitorsCount').innerText = data.uniqueVisitors.toLocaleString();
-          document.getElementById('totalSiteSearches').innerText = data.totalSearches.toLocaleString();
-        }
-      } catch (err) {
-        // Fallback display values during development
-        document.getElementById('uniqueVisitorsCount').innerText = '1,240';
-        document.getElementById('totalSiteSearches').innerText = '8,520';
-      }
-    }
-
-    async function trackUniqueVisitServer(visitorId) {
-      try {
-        await fetch('/api/metrics', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'unique_visit', visitorId })
-        });
-        fetchGlobalMetrics();
-      } catch (err) {}
-    }
-
-    async function trackGlobalSearchServer() {
-      try {
-        await fetch('/api/metrics', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ type: 'search_executed' })
-        });
-        fetchGlobalMetrics();
-      } catch (err) {}
-    }
-
-    // Initializer
-    document.addEventListener('DOMContentLoaded', () => {
-      initUserTracking();
-      fetchGlobalMetrics();
-    });
-  </script>
-</body>
-</html>
+    .metric-
