@@ -152,22 +152,140 @@
 
   </div>
 
-  <script>
+<script>
     function initUserTracking() {
       try {
         if (!localStorage.getItem('sos_visitor_id')) {
           localStorage.setItem('sos_visitor_id', 'vis_' + Math.random().toString(36).substr(2, 9) + Date.now());
         }
-        document.getElementById('userTotalSearches').innerText = parseInt(localStorage.getItem('sos_user_searches') || '0', 10).toLocaleString();
-      } catch (e) {}
+        const userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10);
+        const el = document.getElementById('userTotalSearches');
+        if (el) el.innerText = userSearches.toLocaleString();
+      } catch (e) {
+        console.error("Tracking error:", e);
+      }
     }
 
     function incrementSearchCounters() {
       try {
         let userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10) + 1;
         localStorage.setItem('sos_user_searches', userSearches);
-        document.getElementById('userTotalSearches').innerText = userSearches.toLocaleString();
-      } catch (e) {}
+        const el = document.getElementById('userTotalSearches');
+        if (el) el.innerText = userSearches.toLocaleString();
+      } catch (e) {
+        console.error("Counter error:", e);
+      }
     }
 
-    async function execute
+    async function executeAudit() {
+      const urlInput = document.getElementById('storeUrl').value.trim();
+      const customKey = document.getElementById('customApiKey').value.trim();
+
+      if (!urlInput) {
+        alert('Please enter a valid store URL.');
+        return;
+      }
+
+      const resultsDiv = document.getElementById('auditResults');
+      resultsDiv.innerHTML = '<div class="card" style="text-align: center; color: #2563eb; padding: 40px;">Running 15 trust checkpoint analysis... Please wait.</div>';
+
+      incrementSearchCounters();
+
+      try {
+        const response = await fetch('/api/audit', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ targetUrl: urlInput, userKey: customKey || null })
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          
+          let categoriesHtml = '';
+          if (data.categories && Array.isArray(data.categories)) {
+            data.categories.forEach(cat => {
+              let checkpointsHtml = '';
+              if (cat.checkpoints) {
+                cat.checkpoints.forEach(chk => {
+                  let badgeClass = 'warn';
+                  if (chk.status === 'PASS') badgeClass = 'pass';
+                  if (chk.status === 'FAIL') badgeClass = 'fail';
+
+                  checkpointsHtml += `
+                    <div class="checkpoint-item">
+                      <div>
+                        <div class="checkpoint-title">${chk.name}</div>
+                        <div class="checkpoint-desc">${chk.detail}</div>
+                      </div>
+                      <span class="badge ${badgeClass}">${chk.status}</span>
+                    </div>
+                  `;
+                });
+              }
+
+              categoriesHtml += `
+                <div class="category-card">
+                  <div class="category-header">
+                    <span>${cat.categoryName}</span>
+                    <span class="category-score-badge">Category Score: ${cat.categoryScore}/100</span>
+                  </div>
+                  <div class="checkpoint-list">
+                    ${checkpointsHtml}
+                  </div>
+                </div>
+              `;
+            });
+          }
+
+          let scoreColor = '#059669'; 
+          let scoreBg = '#ecfdf5';
+          let scoreBorder = '#10b981';
+
+          const numericScore = parseInt(data.trustScore, 10) || 0;
+          if (numericScore < 40) {
+            scoreColor = '#dc2626';
+            scoreBg = '#fee2e2';
+            scoreBorder = '#ef4444';
+          } else if (numericScore < 70) {
+            scoreColor = '#d97706';
+            scoreBg = '#fef3c7';
+            scoreBorder = '#f59e0b';
+          }
+
+          resultsDiv.innerHTML = `
+            <div class="report-header-card">
+              <div>
+                <span style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Audit Target</span>
+                <div class="target-url-text">${urlInput}</div>
+              </div>
+              <div class="score-badge-box">
+                <div class="score-circle" style="color: ${scoreColor}; background: ${scoreBg}; border: 3px solid ${scoreBorder};">${numericScore}</div>
+                <div class="score-info">
+                  <div class="label">Trust Rating</div>
+                  <div class="value" style="color: ${scoreColor};">${data.trustRating || 'Analyzed'}</div>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <h3>Executive Summary</h3>
+              <p style="font-size: 0.95rem; line-height: 1.6; color: #334155;">${data.executiveSummary || 'No summary available.'}</p>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; font-size: 1.2rem;">15 Trust Checkpoints & Overrides</h3>
+            ${categoriesHtml}
+          `;
+
+        } else {
+          const errData = await response.json().catch(() => ({}));
+          resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Error: ${errData.error || 'Failed to complete audit.'}</div>`;
+        }
+      } catch (err) {
+        resultsDiv.innerHTML = `<div class="card" style="color: #dc2626; text-align: center; padding: 20px;">Unable to connect to audit server.</div>`;
+      }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => { 
+      initUserTracking(); 
+    });
+  </script>
