@@ -35,11 +35,9 @@
     .btn-audit { background: #059669; color: white; border: none; padding: 12px 24px; border-radius: 6px; font-weight: 700; cursor: pointer; }
     .btn-audit:hover { background: #047857; }
 
-    /* Disclaimer Box Style */
     .disclaimer-box { background: #fdfdfd; border: 1px solid #e5e7eb; border-radius: 6px; padding: 12px 15px; font-size: 0.8rem; color: #6b7280; line-height: 1.5; }
     .disclaimer-box strong { color: #374151; }
 
-    /* Rich Report Layout Styles */
     .report-header-card { display: flex; justify-content: space-between; align-items: center; background: #fff; border: 1px solid #e5e7eb; border-radius: 10px; padding: 20px; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; }
     .target-url-text { font-size: 1.4rem; font-weight: 700; color: #111827; word-break: break-all; margin-top: 5px; }
     
@@ -83,7 +81,7 @@
     <aside class="left-panel">
       <div class="card">
         <h3>Leave a Review</h3>
-        <form id="reviewForm" class="review-form">
+        <form id="reviewForm" class="review-form" onsubmit="submitUserReview(event)">
           <label for="userRating">Rating:</label>
           <select id="userRating" required>
             <option value="5">⭐⭐⭐⭐⭐ (5/5)</option>
@@ -117,13 +115,11 @@
           <input type="password" id="customApiKey" class="api-key-input" placeholder="Optional: Enter OpenRouter API Key (sk-or-v1-...)" />
         </div>
 
-        <!-- RESTORED DISCLAIMER BOX -->
         <div class="disclaimer-box">
           <strong>DISCLAIMER:</strong> The author, developer, and this application shall not be held liable or responsible for any financial, reputational, or other untoward losses or damages arising from the use of this tool or reliance upon its automated audit results.
         </div>
       </div>
 
-      <!-- AUDIT RESULTS CONTAINER -->
       <div id="auditResults">
         <div class="card" style="text-align: center; color: #6b7280; padding: 40px;">
           Enter a store URL above and click "Check Store" to begin analysis.
@@ -136,11 +132,11 @@
         <h3>Site Analytics</h3>
         <div class="metric-item">
           <span class="metric-label">Unique Visitors</span>
-          <span class="metric-value" id="uniqueVisitorsCount">--</span>
+          <span class="metric-value" id="uniqueVisitorsCount">1</span>
         </div>
         <div class="metric-item">
           <span class="metric-label">Total Site Searches</span>
-          <span class="metric-value" id="totalSiteSearches">--</span>
+          <span class="metric-value" id="totalSiteSearches">0</span>
         </div>
         <hr class="divider" />
         <div class="metric-item highlight">
@@ -152,31 +148,94 @@
 
   </div>
 
-<script>
-    function initUserTracking() {
+  <script>
+    // --- 1. UNIQUE VISITORS & SEARCH METRICS ENGINE ---
+    function initMetrics() {
       try {
+        // Unique Visitor Tracking via UUID
         if (!localStorage.getItem('sos_visitor_id')) {
           localStorage.setItem('sos_visitor_id', 'vis_' + Math.random().toString(36).substr(2, 9) + Date.now());
+          let totalVisitors = parseInt(localStorage.getItem('sos_global_visitors') || '1', 10);
+          localStorage.setItem('sos_global_visitors', totalVisitors);
         }
-        const userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10);
-        const el = document.getElementById('userTotalSearches');
-        if (el) el.innerText = userSearches.toLocaleString();
+        
+        const visitors = localStorage.getItem('sos_global_visitors') || '1';
+        const globalSearches = localStorage.getItem('sos_total_site_searches') || '0';
+        const userSearches = localStorage.getItem('sos_user_searches') || '0';
+
+        document.getElementById('uniqueVisitorsCount').innerText = parseInt(visitors, 10).toLocaleString();
+        document.getElementById('totalSiteSearches').innerText = parseInt(globalSearches, 10).toLocaleString();
+        document.getElementById('userTotalSearches').innerText = parseInt(userSearches, 10).toLocaleString();
       } catch (e) {
-        console.error("Tracking error:", e);
+        console.error("Metrics initialization error:", e);
       }
     }
 
     function incrementSearchCounters() {
       try {
         let userSearches = parseInt(localStorage.getItem('sos_user_searches') || '0', 10) + 1;
+        let totalSearches = parseInt(localStorage.getItem('sos_total_site_searches') || '0', 10) + 1;
+
         localStorage.setItem('sos_user_searches', userSearches);
-        const el = document.getElementById('userTotalSearches');
-        if (el) el.innerText = userSearches.toLocaleString();
+        localStorage.setItem('sos_total_site_searches', totalSearches);
+
+        document.getElementById('userTotalSearches').innerText = userSearches.toLocaleString();
+        document.getElementById('totalSiteSearches').innerText = totalSearches.toLocaleString();
       } catch (e) {
         console.error("Counter error:", e);
       }
     }
 
+    // --- 2. REVIEWS & AVERAGE RATING ENGINE ---
+    function loadReviews() {
+      const feedDiv = document.getElementById('reviewsFeed');
+      const storedReviews = JSON.parse(localStorage.getItem('sos_reviews') || '[]');
+
+      if (storedReviews.length === 0) {
+        feedDiv.innerHTML = '<p style="font-size: 0.85rem; color: #6b7280;">No reviews submitted yet.</p>';
+        return;
+      }
+
+      // Calculate Average Rating
+      const sum = storedReviews.reduce((acc, r) => acc + parseInt(r.rating, 10), 0);
+      const avg = (sum / storedReviews.length).toFixed(1);
+      const stars = '⭐'.repeat(Math.round(avg));
+
+      let html = `
+        <div style="background: #f8fafc; border: 1px solid #e2e8f0; padding: 10px; border-radius: 8px; margin-bottom: 12px; text-align: center;">
+          <div style="font-size: 1.1rem; font-weight: 800; color: #1e293b;">${avg} ${stars}</div>
+          <div style="font-size: 0.75rem; color: #64748b; margin-top: 2px;">Average from ${storedReviews.length} review(s)</div>
+        </div>
+      `;
+
+      storedReviews.slice().reverse().forEach(r => {
+        html += `
+          <div style="background: #ffffff; border: 1px solid #f1f5f9; padding: 8px 10px; border-radius: 6px; margin-bottom: 8px;">
+            <div style="font-size: 0.8rem; color: #fbbf24;">${'⭐'.repeat(r.rating)}</div>
+            <p style="font-size: 0.85rem; color: #334155; margin-top: 3px; word-break: break-word;">${r.comment}</p>
+          </div>
+        `;
+      });
+
+      feedDiv.innerHTML = html;
+    }
+
+    function submitUserReview(event) {
+      event.preventDefault();
+      const rating = document.getElementById('userRating').value;
+      const comment = document.getElementById('reviewComment').value.trim();
+
+      if (!comment) return;
+
+      const storedReviews = JSON.parse(localStorage.getItem('sos_reviews') || '[]');
+      storedReviews.push({ rating, comment, date: new Date().toLocaleDateString() });
+      localStorage.setItem('sos_reviews', JSON.stringify(storedReviews));
+
+      document.getElementById('reviewComment').value = '';
+      loadReviews();
+    }
+
+    // --- 3. AUDIT EXECUTION ENGINE ---
     async function executeAudit() {
       const urlInput = document.getElementById('storeUrl').value.trim();
       const customKey = document.getElementById('customApiKey').value.trim();
@@ -286,6 +345,9 @@
     }
 
     document.addEventListener('DOMContentLoaded', () => { 
-      initUserTracking(); 
+      initMetrics();
+      loadReviews();
     });
   </script>
+</body>
+</html>
